@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support Portal — Signing you in…</title>
+
+  <!-- Brand theme (matches index/portal) -->
+  <style>
+    :root{ --brand:#111827; }
+    .brand-bg{ background:var(--brand) }
+    .brand-text{ color:var(--brand) }
+  </style>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>html{font-family:Inter,ui-sans-serif,system-ui,sans-serif}</style>
+
+  <!-- Tailwind (dark mode) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+
+  <!-- Lucide for icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="icon" href="data:,">
+  <style>
+    *{scrollbar-width:thin;scrollbar-color:#a1a1aa transparent}
+    ::-webkit-scrollbar{height:8px;width:8px}
+    ::-webkit-scrollbar-thumb{background:#a1a1aa;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b bg-white/80 backdrop-blur-md dark:bg-zinc-950/80 dark:border-zinc-800 sticky top-0 z-40">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="relative flex items-center gap-2">
+        <img id="brandLogo" src="/logo.svg" alt="Logo" class="h-8 w-8 rounded-xl hidden" onload="this.classList.remove('hidden')" onerror="this.remove()">
+        <div class="h-8 w-8 rounded-xl text-white dark:text-black grid place-items-center font-semibold" style="background:var(--brand)">S</div>
+      </div>
+      <h1 class="text-lg md:text-xl font-semibold tracking-tight">Support Portal</h1>
+      <span class="text-xs ml-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">Magic link</span>
+      <div class="ml-auto">
+        <button id="darkBtn" class="inline-flex items-center gap-1 text-sm border rounded-xl px-3 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <i data-lucide="moon" class="h-4 w-4"></i> <span>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-1 grid place-items-center p-4">
+    <div class="w-full max-w-xl bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl shadow-sm p-6">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="h-9 w-9 rounded-xl grid place-items-center text-white dark:text-black" style="background:var(--brand)">
+          <i data-lucide="key-round" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <div class="text-lg font-semibold">Signing you in…</div>
+          <div class="text-sm text-zinc-500">Validating your magic link token.</div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="state-loading" class="flex items-center gap-3 mt-4">
+        <svg class="animate-spin h-5 w-5 text-zinc-500" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4A4 4 0 008 12H4z"></path>
+        </svg>
+        <div class="text-sm text-zinc-600 dark:text-zinc-300">Please wait…</div>
+      </div>
+
+      <!-- Success -->
+      <div id="state-success" class="hidden mt-4">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 text-emerald-600">
+            <i data-lucide="badge-check" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="text-sm">
+              <span class="font-medium">Success.</span>
+              You’re signed in as <span id="successEmail" class="font-medium"></span>.
+            </div>
+            <div class="text-sm text-zinc-500 mt-1">
+              We’ll redirect you to your tickets in <span id="countdown" class="font-medium">3</span>s, or you can continue now.
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <a href="portal.html" id="goPortal" class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm text-white bg-[var(--brand)] hover:opacity-90">
+                <i data-lucide="arrow-right" class="h-4 w-4"></i> Go to Portal
+              </a>
+              <a href="index.html" class="text-sm underline text-zinc-600 dark:text-zinc-300">Agent Workspace</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="state-error" class="hidden mt-4">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 text-rose-600">
+            <i data-lucide="circle-alert" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="text-sm">
+              <span class="font-medium">We couldn’t sign you in.</span>
+              <span id="errorReason"></span>
+            </div>
+            <ul class="list-disc ml-5 text-sm text-zinc-500 mt-2">
+              <li>If you opened an old email, the link may have expired (valid 15 min).</li>
+              <li>Each link can be used only once.</li>
+              <li>You can request a fresh sign-in link from the portal.</li>
+            </ul>
+            <div class="mt-3 flex items-center gap-2">
+              <a href="portal.html" class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm border hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                <i data-lucide="undo-2" class="h-4 w-4"></i> Back to Portal
+              </a>
+              <button id="retryBtn" class="text-sm underline">Retry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No token -->
+      <div id="state-missing" class="hidden mt-4">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 text-amber-600">
+            <i data-lucide="help-circle" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="text-sm">
+              <span class="font-medium">No token in the URL.</span> This page is meant to be opened from a magic link.
+            </div>
+            <div class="mt-3">
+              <a href="portal.html" class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm border hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                <i data-lucide="home" class="h-4 w-4"></i> Go to Portal
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="max-w-xl mx-auto px-4 pb-8 text-xs text-zinc-500">
+    If this keeps failing, contact support and include the time you tried to sign in.
+  </footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const show = (id) => { $('state-loading').classList.add('hidden'); $('state-success').classList.add('hidden'); $('state-error').classList.add('hidden'); $('state-missing').classList.add('hidden'); $(id).classList.remove('hidden'); };
+    const API_ORIGIN = location.port === '4000' ? '' : 'http://localhost:4000';
+
+    // Dark toggle
+    (function(){
+      const root=document.documentElement, btn=$('darkBtn');
+      const saved=localStorage.getItem('theme'); const prefers=matchMedia('(prefers-color-scheme: dark)').matches;
+      const start=saved? saved==='dark' : prefers; root.classList.toggle('dark', start);
+      const render=()=>{ btn.querySelector('span').textContent = root.classList.contains('dark') ? 'Light' : 'Dark';
+        const icon=btn.querySelector('i'); icon.setAttribute('data-lucide', root.classList.contains('dark') ? 'sun' : 'moon'); lucide.createIcons(); };
+      render(); btn.onclick=()=>{ const next=!root.classList.contains('dark'); root.classList.toggle('dark',next); localStorage.setItem('theme',next?'dark':'light'); render(); };
+    })();
+
+    async function consume() {
+      show('state-loading');
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+
+      if (!token) { show('state-missing'); return; }
+
+      try {
+        const res = await fetch(`${API_ORIGIN}/api/auth/magic-link/consume?token=` + encodeURIComponent(token));
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          const reason = (data && (data.error || data.message)) || ('HTTP ' + res.status);
+          $('errorReason').textContent = ' ' + reason + '.';
+          show('state-error');
+          return;
+        }
+
+        // Success: store and redirect
+        const email = data.email;
+        localStorage.setItem('portalEmail', email);
+        $('successEmail').textContent = email;
+        show('state-success');
+
+        // Countdown then redirect
+        let n = 3;
+        $('countdown').textContent = n;
+        const timer = setInterval(() => {
+          n -= 1; $('countdown').textContent = n;
+          if (n <= 0) { clearInterval(timer); location.replace('portal.html'); }
+        }, 1000);
+
+        // Allow manual click immediately
+        $('goPortal').addEventListener('click', (e) => {
+          e.preventDefault(); location.replace('portal.html');
+        });
+
+      } catch (e) {
+        $('errorReason').textContent = ' ' + (e.message || 'Network error') + '.';
+        show('state-error');
+      }
+    }
+
+    $('retryBtn')?.addEventListener('click', consume);
+
+    // Start
+    consume();
+    window.addEventListener('load', ()=> lucide.createIcons());
+  </script>
+</body>
+</html>

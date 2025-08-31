@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support Desk — Agent Workspace</title>
+
+  <!-- Brand theme -->
+  <style>
+    :root{ --brand:#111827; } /* change me to rebrand */
+    .brand-bg{ background:var(--brand) }
+    .brand-text{ color:var(--brand) }
+    .brand-border{ border-color:var(--brand) }
+  </style>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>html{font-family:Inter,ui-sans-serif,system-ui,sans-serif}</style>
+
+  <!-- Tailwind + dark mode config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="icon" href="data:,">
+  <style>
+    *{scrollbar-width:thin;scrollbar-color:#a1a1aa transparent}
+    ::-webkit-scrollbar{height:8px;width:8px}
+    ::-webkit-scrollbar-thumb{background:#a1a1aa;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50 transition-colors">
+  <!-- Error bubble -->
+  <div id="errBubble" class="hidden fixed top-4 right-4 z-[100] max-w-sm text-sm bg-rose-600 text-white px-3 py-2 rounded-xl shadow-lg"></div>
+
+  <!-- Top bar -->
+  <header class="border-b bg-white/80 backdrop-blur-md dark:bg-zinc-950/80 dark:border-zinc-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="relative flex items-center gap-2">
+        <img id="brandLogo" src="/logo.svg" alt="Logo" class="h-8 w-8 rounded-xl hidden" onload="this.classList.remove('hidden')" onerror="this.remove()">
+        <div id="brandFallback" class="h-8 w-8 rounded-xl text-white dark:text-black grid place-items-center font-semibold" style="background:var(--brand)">S</div>
+      </div>
+      <h1 class="text-lg md:text-xl font-semibold tracking-tight">Support Desk</h1>
+      <span class="text-xs ml-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">Agent Workspace</span>
+
+      <div class="ml-auto flex items-center gap-2">
+        <a href="portal.html" class="hidden sm:inline-flex items-center gap-1 rounded-xl border px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <i data-lucide="external-link" class="h-4 w-4"></i> Customer Portal
+        </a>
+        <input id="brandPicker" type="color" value="#111827" class="hidden sm:inline-block h-9 w-10 rounded-md border dark:border-zinc-700 cursor-pointer" title="Brand color">
+        <button id="analyticsBtn" class="inline-flex items-center gap-1 rounded-xl border px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <i data-lucide="chart-line" class="h-4 w-4"></i> Analytics
+        </button>
+        <button id="darkBtn" class="inline-flex items-center gap-1 rounded-xl border px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <i data-lucide="moon" class="h-4 w-4"></i><span>Dark</span>
+        </button>
+        <button id="newTicketBtn" class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm text-white bg-[var(--brand)] hover:opacity-90">
+          <i data-lucide="plus" class="h-4 w-4"></i> New ticket
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto p-4 grid gap-4 md:grid-cols-3">
+    <!-- Sidebar -->
+    <aside class="md:col-span-1 space-y-3">
+      <div class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl p-3 shadow-sm">
+        <div class="flex items-center gap-2">
+          <i data-lucide="search" class="h-4 w-4 text-zinc-500"></i>
+          <input id="search" placeholder="Search tickets…" class="w-full rounded-xl border dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-zinc-700" />
+          <button id="clearSearch" class="text-xs px-2 py-1 border rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900">Clear</button>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl shadow-sm">
+        <div class="px-4 py-3 border-b dark:border-zinc-800 flex items-center justify-between">
+          <div class="font-medium">Tickets</div>
+          <div id="countBadge" class="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800">0</div>
+        </div>
+        <ul id="ticketList" class="max-h-[70vh] overflow-auto divide-y dark:divide-zinc-800">
+          <li class="p-4 animate-pulse">
+            <div class="h-3 w-2/3 bg-zinc-200 dark:bg-zinc-800 rounded mb-2"></div>
+            <div class="h-2 w-1/3 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+          </li>
+          <li class="p-4 animate-pulse">
+            <div class="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded mb-2"></div>
+            <div class="h-2 w-1/4 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Ticket view -->
+    <section class="md:col-span-2">
+      <div id="ticketView" class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl p-0 min-h-[70vh] shadow-sm flex flex-col">
+        <div class="flex-1 grid place-items-center text-center text-zinc-500 dark:text-zinc-400 p-8">
+          <div class="max-w-sm">
+            <i data-lucide="inbox" class="h-10 w-10 mx-auto mb-3"></i>
+            <div class="text-lg font-medium">Select a ticket</div>
+            <div class="text-sm">Choose a conversation on the left to get started.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Analytics modal -->
+  <div id="analyticsModal" class="fixed inset-0 hidden justify-center bg-black/40 overflow-y-auto">
+    <div class="bg-white dark:bg-zinc-950 rounded-2xl w-full max-w-2xl p-6 mt-20 mb-10 mx-auto shadow-xl border dark:border-zinc-800">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Analytics</h2>
+        <button id="closeAnalytics" class="text-sm border px-2 py-1 rounded-xl">Close</button>
+      </div>
+      <div id="analyticsBody" class="grid md:grid-cols-2 gap-4 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- New Ticket Modal -->
+  <div id="modal" class="fixed inset-0 hidden justify-center bg-black/40 overflow-y-auto">
+    <div class="bg-white dark:bg-zinc-950 rounded-2xl w-full max-w-xl p-5 mt-20 mb-10 mx-auto shadow-xl border dark:border-zinc-800">
+      <h2 class="text-lg font-semibold mb-3">Create new ticket</h2>
+      <form id="newForm" class="space-y-3">
+        <div class="grid md:grid-cols-2 gap-3">
+          <input id="reqName" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Requester name (optional)"/>
+          <input id="reqEmail" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Requester email" value="demo@example.com"/>
+        </div>
+        <input id="subj" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Subject" required />
+        <textarea id="body" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" rows="6" placeholder="Describe the issue" required></textarea>
+        <div class="flex gap-2 justify-between pt-1 items-center">
+          <div class="text-xs">Tags: <span class="text-zinc-500">(add below after creation)</span></div>
+          <div class="flex gap-2">
+            <button type="button" id="cancelBtn" class="px-3 py-2 rounded-xl border">Cancel</button>
+            <button class="px-3 py-2 rounded-xl text-white bg-[var(--brand)] hover:opacity-90">Create</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 right-4 hidden bg-black/90 text-white text-sm px-3 py-2 rounded-xl shadow-lg"></div>
+
+  <script>
+    // ========= Error bubble & safe icons =========
+    const showError = (msg) => { const b=document.getElementById('errBubble'); b.textContent=msg; b.classList.remove('hidden'); setTimeout(()=>b.classList.add('hidden'), 5000); };
+    window.addEventListener('error', e => showError(e.message || 'Script error'));
+    window.addEventListener('unhandledrejection', e => showError((e.reason && e.reason.message) || 'Promise error'));
+    const icons = () => { try { if (window.lucide && typeof lucide.createIcons==='function') lucide.createIcons(); } catch(_){} };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // -------- API origin --------
+      const API_ORIGIN = location.port === '4000' ? '' : 'http://localhost:4000';
+      const api = (p, opts={}) => fetch(`${API_ORIGIN}/api/tickets${p}`, { headers:{'Content-Type':'application/json'}, ...opts });
+
+      const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      const toast = (msg) => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1400); };
+      const $ = (id) => document.getElementById(id);
+
+      // Normalize to array (tags may be null/string/JSON string/array)
+      function toArray(v) {
+        if (Array.isArray(v)) return v;
+        if (v == null) return [];
+        if (typeof v === 'string') {
+          try { const j = JSON.parse(v); if (Array.isArray(j)) return j; } catch(_){}
+          return v.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        return [];
+      }
+
+      const chip = (label, kind='status') => {
+        const map = {
+          status:{ new:'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',
+                   open:'bg-sky-200 text-sky-900 dark:bg-sky-700 dark:text-white',
+                   pending:'bg-amber-200 text-amber-900 dark:bg-amber-700 dark:text-white',
+                   solved:'bg-emerald-200 text-emerald-900 dark:bg-emerald-700 dark:text-white' },
+          priority:{ low:'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',
+                     normal:'bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-white',
+                     high:'bg-rose-200 text-rose-900 dark:bg-rose-700 dark:text-white' }
+        };
+        const c = (map[kind] && map[kind][(label||'').toLowerCase()]) || 'bg-zinc-100 dark:bg-zinc-800';
+        return `<span class="px-2 py-0.5 rounded-full text-[10px] ${c}">${esc(label)}</span>`;
+      };
+      const initials = (nameOrEmail='?') => {
+        const s=String(nameOrEmail); const parts=s.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+        const a=(parts[0]||'?')[0]||'?', b=(parts[1]||'')[0]||'';
+        return (a+b).toUpperCase();
+      };
+
+      // Brand picker
+      const bp=$('brandPicker'); if (bp){ bp.addEventListener('input', e=> document.documentElement.style.setProperty('--brand', e.target.value)); }
+
+      // -------- Dark mode --------
+      (function () {
+        const root = document.documentElement;
+        const btn  = $('darkBtn');
+        const saved = localStorage.getItem('theme');
+        const prefers = matchMedia('(prefers-color-scheme: dark)').matches;
+        const startDark = saved ? saved === 'dark' : prefers;
+        root.classList.toggle('dark', startDark);
+        const renderBtn = () => { btn.querySelector('span').textContent = root.classList.contains('dark') ? 'Light' : 'Dark';
+          const icon = btn.querySelector('i'); if (icon) { icon.setAttribute('data-lucide', root.classList.contains('dark') ? 'sun' : 'moon'); icons(); } };
+        renderBtn();
+        btn.addEventListener('click', () => {
+          const next = !root.classList.contains('dark');
+          root.classList.toggle('dark', next);
+          localStorage.setItem('theme', next ? 'dark' : 'light');
+          renderBtn();
+        });
+      })();
+
+      // -------- State --------
+      let allTickets = [];
+      let tagsMaster = [];
+      let macros = [];
+      let activeId = null;
+
+      async function loadMeta() {
+        const [t1, t2] = await Promise.all([
+          fetch(`${API_ORIGIN}/api/tickets/meta/tags`),
+          fetch(`${API_ORIGIN}/api/tickets/meta/macros`)
+        ]);
+        tagsMaster = await t1.json();
+        macros = await t2.json();
+      }
+
+      async function fetchTickets() {
+        const res = await fetch(`${API_ORIGIN}/api/tickets`);
+        allTickets = await res.json();
+        renderList();
+      }
+
+      function renderList() {
+        const q = ($('search').value || '').trim().toLowerCase();
+        const list = $('ticketList');
+        list.innerHTML = '';
+        const filtered = allTickets.filter(t => !q || (t.subject||'').toLowerCase().includes(q));
+        $('countBadge').textContent = filtered.length;
+
+        if (!filtered.length) {
+          list.innerHTML = `<li class="p-8 text-sm text-zinc-500 text-center">
+            <i data-lucide="sparkles" class="h-4 w-4 mx-auto mb-2"></i>
+            No tickets yet — create one to get started.
+          </li>`;
+          icons();
+          return;
+        }
+
+        filtered.forEach(t => {
+          const li = document.createElement('li');
+          li.className = 'p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer';
+          li.innerHTML =
+            `<div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-medium truncate">${esc(t.subject)}</div>
+                <div class="text-xs text-zinc-500 mt-1 flex items-center gap-2">
+                  ${chip(t.status,'status')}
+                  ${chip(t.priority,'priority')}
+                  <span class="text-zinc-400">•</span>
+                  <span>${esc(t.category||'other')}</span>
+                </div>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800">${new Date(t.updated_at).toLocaleTimeString()}</span>
+            </div>`;
+          li.onclick = () => openTicket(t.id);
+          list.appendChild(li);
+        });
+        icons();
+      }
+
+      $('search').addEventListener('input', renderList);
+      $('clearSearch').onclick = () => { $('search').value=''; renderList(); };
+
+      // -------- Ticket details / actions (with AI panel) --------
+      async function openTicket(id) {
+        activeId = id;
+        const [tRes, mRes] = await Promise.all([api('/'+id), api('/'+id+'/messages')]);
+        const t = await tRes.json();
+        const msgs = await mRes.json();
+
+        const tagHtml = toArray(t.tags)
+          .map(tag=>`<span class="px-2 py-0.5 text-[10px] rounded-full bg-zinc-100 dark:bg-zinc-800 mr-1">${esc(tag)}</span>`)
+          .join('');
+
+        const header =
+          `<div class="p-6 pb-3 border-b dark:border-zinc-800">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold tracking-tight">${esc(t.subject)}</h2>
+                <div class="text-xs text-zinc-500 mt-2 flex flex-wrap items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.status)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.priority)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">category: ${esc(t.category||'other')}</span>
+                  ${t.sentiment ? `<span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">sentiment: ${esc(t.sentiment)}</span>` : ''}
+                </div>
+                <div class="mt-2">${tagHtml}</div>
+              </div>
+              <div class="text-right text-xs text-zinc-500">${new Date(t.updated_at).toLocaleString()}</div>
+            </div>
+          </div>`;
+
+        const thread =
+          `<div class="flex-1 overflow-auto p-4 space-y-3">
+            ${msgs.map(m => {
+              const isAgent = m.author_type === 'agent';
+              const avatar = `<div class="h-7 w-7 rounded-full ${isAgent?'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900':'bg-zinc-200 dark:bg-zinc-800'} grid place-items-center text-[10px] font-semibold mr-2">${initials(isAgent?'Agent':(t.requester_name||t.requester_email||'?'))}</div>`;
+              return `<div class="flex ${isAgent?'justify-end':''}">
+                <div class="flex items-start ${isAgent?'flex-row-reverse':''} max-w-[80%]">
+                  ${avatar}
+                  <div class="${isAgent ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800'} px-3 py-2 rounded-2xl shadow-sm">
+                    <div class="text-[10px] opacity-70 mb-1">${esc(m.author_type)} • ${new Date(m.created_at).toLocaleString()}</div>
+                    <div class="text-sm leading-5 whitespace-pre-wrap">${esc(m.body)}</div>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>`;
+
+        // --- AI suggestion box (restored) ---
+        const aiBox = `
+          <div class="mx-4 mt-4 p-3 border rounded-2xl dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+            <div class="flex items-center justify-between mb-1">
+              <div class="text-sm font-medium">AI suggestion</div>
+              <div class="flex gap-2">
+                <button id="regenAI" class="text-xs border rounded-xl px-2 py-1">Regenerate</button>
+                <button id="useAI"   class="text-xs border rounded-xl px-2 py-1">Insert into reply</button>
+              </div>
+            </div>
+            <div id="aiText" class="text-sm leading-5 whitespace-pre-wrap">${esc(t.ai_suggestion || 'No suggestion yet. Click “Regenerate”.')}</div>
+          </div>`;
+
+        const macroOptions = (macros||[]).map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+        const tagOptions   = (tagsMaster||[]).map(tg=>`<option value="${esc(tg)}">${esc(tg)}</option>`).join('');
+
+        const controls =
+          `<div class="px-4 py-3 border-t dark:border-zinc-800 grid gap-3 md:grid-cols-2">
+            <div class="flex gap-2 items-center">
+              <label class="text-xs">Macro:</label>
+              <select id="macroSelect" class="border rounded-xl px-2 py-1 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700"><option value="">—</option>${macroOptions}</select>
+              <button id="applyMacro" class="text-xs border rounded-xl px-2 py-1">Insert</button>
+            </div>
+            <div class="flex gap-2 items-center justify-end">
+              <label class="text-xs">Tag:</label>
+              <select id="tagSelect" class="border rounded-xl px-2 py-1 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700">${tagOptions}</select>
+              <button id="addTag" class="text-xs border rounded-xl px-2 py-1">Add</button>
+              <button id="markSolved" class="text-xs rounded-xl px-2 py-1 text-white bg-[var(--brand)]">Mark solved</button>
+            </div>
+          </div>`;
+
+        const composer =
+          `<form id="replyForm" class="sticky bottom-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-t dark:border-zinc-800 p-3">
+            <div class="flex items-end gap-2">
+              <textarea class="flex-1 border dark:border-zinc-700 rounded-xl p-3 text-sm bg-white dark:bg-zinc-900" rows="3" placeholder="Write a reply… (Cmd/Ctrl+Enter to send)"></textarea>
+              <button class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-white bg-[var(--brand)]">
+                <i data-lucide="send" class="h-4 w-4"></i> Send
+              </button>
+            </div>
+            <div class="mt-3 p-3 border rounded-2xl dark:border-zinc-800">
+              <div class="text-sm font-medium mb-1">CSAT</div>
+              <div class="text-xs text-zinc-500 mb-2">Record customer satisfaction for this ticket.</div>
+              <div class="flex items-center gap-2">
+                <select id="csatRating" class="border rounded-xl px-2 py-1 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700">
+                  <option value="">Rating…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+                <input id="csatComment" class="flex-1 border rounded-xl px-3 py-1 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700" placeholder="Optional comment" />
+                <button id="saveCsat" class="text-xs border rounded-xl px-2 py-1">Save</button>
+              </div>
+            </div>
+          </form>`;
+
+        $('ticketView').innerHTML = header + thread + aiBox + controls + composer;
+
+        // --- AI handlers ---
+        const insertAI = () => {
+          const text = $('aiText').textContent.trim();
+          if (!text) return;
+          const ta = $('replyForm').querySelector('textarea');
+          ta.value = (ta.value ? ta.value + '\n\n' : '') + text;
+          toast('AI suggestion inserted');
+        };
+        $('useAI').onclick = insertAI;
+
+        $('regenAI').onclick = async () => {
+          $('aiText').textContent = 'Generating…';
+          try {
+            await fetch(`${API_ORIGIN}/api/tickets/${id}?refreshAi=1`);
+            const t2 = await (await fetch(`${API_ORIGIN}/api/tickets/${id}`)).json();
+            $('aiText').textContent = t2.ai_suggestion || 'No suggestion produced.';
+          } catch (e) {
+            $('aiText').textContent = `Failed to generate: ${e.message || e}`;
+          }
+        };
+
+        // --- Ticket controls ---
+        $('applyMacro').onclick = () => {
+          const idSel = $('macroSelect').value;
+          const m = (macros||[]).find(x => String(x.id) === String(idSel));
+          if (m) {
+            const ta = $('replyForm').querySelector('textarea');
+            ta.value = (ta.value ? ta.value + '\n\n' : '') + m.body;
+            toast('Macro inserted');
+          }
+        };
+        $('addTag').onclick = async () => {
+          const tg = $('tagSelect').value; if (!tg) return;
+          await api('/'+id+'/tags', { method:'POST', body: JSON.stringify({ tag: tg }) });
+          toast('Tag added'); await fetchTickets(); openTicket(id);
+        };
+        $('markSolved').onclick = async () => {
+          await api('/'+id+'/status', { method:'POST', body: JSON.stringify({ status: 'solved' }) });
+          toast('Marked solved'); await fetchTickets(); openTicket(id);
+        };
+        $('saveCsat').onclick = async () => {
+          const rating = Number($('csatRating').value);
+          if (!rating) return toast('Pick a rating 1–5');
+          const comment = $('csatComment').value;
+          await api('/'+id+'/csat', { method:'POST', body: JSON.stringify({ rating, comment }) });
+          $('csatRating').value=''; $('csatComment').value=''; toast('CSAT saved');
+        };
+
+        const rf = $('replyForm');
+        rf.onsubmit = async (e) => {
+          e.preventDefault();
+          const body = e.target.querySelector('textarea').value.trim();
+          if (!body) return;
+          await api('/'+id+'/messages', { method:'POST', body: JSON.stringify({ body, author_type:'agent' }) });
+          e.target.reset(); toast('Reply sent'); await fetchTickets(); openTicket(id);
+        };
+        rf.querySelector('textarea').addEventListener('keydown', (ev) => {
+          if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') rf.dispatchEvent(new Event('submit', {cancelable:true}));
+        });
+
+        icons();
+      }
+
+      // -------- Create Ticket --------
+      $('newForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const subject = $('subj').value.trim();
+        const body = $('body').value.trim();
+        const name = $('reqName').value.trim();
+        const email = $('reqEmail').value.trim() || 'demo@example.com';
+        if (!subject || !body) return;
+        const requester = { email }; if (name) requester.name = name;
+
+        await fetch(`${API_ORIGIN}/api/tickets`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ subject, body, channel:'web', requester })
+        });
+
+        $('modal').classList.add('hidden'); e.target.reset(); toast('Ticket created'); await fetchTickets();
+      };
+
+      // -------- Analytics --------
+      $('analyticsBtn').onclick = async () => {
+        const res = await fetch(`${API_ORIGIN}/api/tickets/meta/analytics`);
+        const data = await res.json();
+        const el = $('analyticsBody');
+        const bars = (arr) => {
+          const max = Math.max(1, ...arr.map(a=>a.c));
+          return `<div class="flex items-end gap-1 h-20">
+            ${arr.map(a=>`<div title="${a.d||a.status}: ${a.c}" class="w-6 bg-zinc-300 dark:bg-zinc-700 rounded" style="height:${Math.round((a.c/max)*100)}%"></div>`).join('')}
+          </div>`;
+        };
+        el.innerHTML =
+          `<div class="p-3 border rounded-2xl dark:border-zinc-800">
+            <div class="text-xs text-zinc-500">Total tickets</div><div class="text-2xl font-semibold">${data.total}</div>
+            <div class="mt-2 text-xs">Avg CSAT: ${(data.avgCsat ?? '—')} • Avg FRT (min): ${(data.avgFRT ?? '—')}</div>
+          </div>
+          <div class="p-3 border rounded-2xl dark:border-zinc-800">
+            <div class="text-xs text-zinc-500">By status</div>
+            ${data.byStatus.map(s=>`<div class="flex justify-between"><span>${s.status}</span><span>${s.c}</span></div>`).join('')}
+          </div>
+          <div class="md:col-span-2 p-3 border rounded-2xl dark:border-zinc-800">
+            <div class="text-xs text-zinc-500 mb-2">New tickets (last 7 days)</div> ${bars(data.last7)}
+          </div>`;
+        $('analyticsModal').classList.remove('hidden');
+      };
+      $('closeAnalytics').onclick = () => $('analyticsModal').classList.add('hidden');
+
+      // -------- Modal open/close --------
+      $('newTicketBtn').onclick = () => $('modal').classList.remove('hidden');
+      $('cancelBtn').onclick = () => $('modal').classList.add('hidden');
+
+      // -------- Init --------
+      (async function init() {
+        await loadMeta();
+        await fetchTickets();
+        icons();
+      })();
+    });
+  </script>
+</body>
+</html>

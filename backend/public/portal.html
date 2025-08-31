@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support Desk — Customer Portal</title>
+
+  <!-- Theme -->
+  <style>:root{--brand:#111827}</style>
+
+  <!-- Inter + Tailwind + Lucide -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>html{font-family:Inter,ui-sans-serif,system-ui,sans-serif}</style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class'}</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="icon" href="data:,">
+  <style>
+    *{scrollbar-width:thin;scrollbar-color:#a1a1aa transparent}
+    ::-webkit-scrollbar{height:8px;width:8px}
+    ::-webkit-scrollbar-thumb{background:#a1a1aa;border-radius:9999px}
+    .kb-pill{font-size:11px}
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50 transition-colors">
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 right-4 hidden bg-black/90 text-white text-sm px-3 py-2 rounded-xl shadow-lg z-50"></div>
+
+  <!-- Header -->
+  <header class="border-b bg-white/80 backdrop-blur-md dark:bg-zinc-950/80 dark:border-zinc-800 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="index.html" class="inline-flex items-center gap-2">
+        <div class="h-8 w-8 rounded-xl text-white dark:text-black grid place-items-center font-semibold" style="background:var(--brand)">S</div>
+        <span class="text-lg font-semibold tracking-tight">Support Portal</span>
+      </a>
+      <span class="text-xs ml-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">Customer</span>
+
+      <div class="ml-auto flex items-center gap-2">
+        <!-- Dark toggle (safe for Lucide) -->
+        <button id="darkBtn" class="inline-flex items-center gap-1 rounded-xl border px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
+          <span id="darkIconSlot" class="h-4 w-4 inline-block align-[-2px]"></span>
+          <span id="darkLabel">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto p-4 grid gap-4 md:grid-cols-3">
+    <!-- Left: Sign in + New ticket -->
+    <aside class="md:col-span-1 space-y-4">
+      <!-- Sign-in card -->
+      <div class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-medium">Your details</div>
+          <button id="signOut" class="text-xs px-2 py-1 border rounded-xl hidden">Sign out</button>
+        </div>
+        <form id="loginForm" class="space-y-3">
+          <input id="custName"  class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Your name (optional)"/>
+          <input id="custEmail" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Your email" required/>
+          <button class="w-full px-3 py-2 rounded-xl text-white bg-[var(--brand)] hover:opacity-90">Continue</button>
+        </form>
+        <div id="whoami" class="hidden text-sm text-zinc-500">Signed in as <span class="font-medium" id="whoEmail"></span></div>
+      </div>
+
+      <!-- New ticket -->
+      <div class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl p-4 shadow-sm">
+        <div class="font-medium mb-2">Create a ticket</div>
+        <form id="newForm" class="space-y-3">
+          <input id="subj" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" placeholder="Subject" required />
+          <!-- KB suggestions under Subject -->
+          <div id="kbSuggestSubj" class="text-xs mt-1 space-y-1"></div>
+
+          <textarea id="body" class="w-full border dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900" rows="6" placeholder="Describe the issue" required></textarea>
+          <!-- KB suggestions under Body -->
+          <div id="kbSuggestBody" class="text-xs mt-1 space-y-1"></div>
+
+          <button class="w-full px-3 py-2 rounded-xl text-white bg-[var(--brand)] hover:opacity-90">Submit</button>
+        </form>
+        <div class="text-xs text-zinc-500 mt-2">We’ll email you when an agent replies.</div>
+      </div>
+    </aside>
+
+    <!-- Right: Ticket list + Thread -->
+    <section class="md:col-span-2 space-y-4">
+      <!-- Tickets list -->
+      <div class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl shadow-sm">
+        <div class="px-4 py-3 border-b dark:border-zinc-800 flex items-center justify-between">
+          <div class="font-medium">Your tickets</div>
+          <div class="text-xs text-zinc-500">Only tickets for your email are shown</div>
+        </div>
+        <div class="p-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="search" class="h-4 w-4 text-zinc-500"></i>
+            <input id="search" placeholder="Search subject…" class="w-full rounded-xl border dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-zinc-700" />
+            <button id="refreshBtn" class="text-xs px-2 py-1 border rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900">Refresh</button>
+          </div>
+        </div>
+        <ul id="ticketList" class="max-h-[60vh] overflow-auto divide-y dark:divide-zinc-800">
+          <li class="p-4 text-sm text-zinc-500">Sign in with your email to view your tickets.</li>
+        </ul>
+      </div>
+
+      <!-- Thread -->
+      <div id="threadCard" class="bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-2xl p-0 min-h-[40vh] shadow-sm flex flex-col">
+        <div class="flex-1 grid place-items-center text-center text-zinc-500 dark:text-zinc-400 p-8">
+          <div class="max-w-sm">
+            <i data-lucide="message-square" class="h-10 w-10 mx-auto mb-3"></i>
+            <div class="text-lg font-medium">Open a ticket</div>
+            <div class="text-sm">Choose a ticket above to view and reply.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ---------- helpers ----------
+    const icons=()=>{try{lucide.createIcons()}catch(e){}};
+    const toast=(msg)=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),1400)};
+    const $=(id)=>document.getElementById(id);
+    const esc=(s)=>(s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const toArray=(v)=>{if(Array.isArray(v))return v;if(v==null)return[];if(typeof v==='string'){try{const j=JSON.parse(v);if(Array.isArray(j))return j;}catch{}return v.split(',').map(s=>s.trim()).filter(Boolean)}return[]};
+
+    // ---------- API origin ----------
+    const API_ORIGIN = location.port==='4000' ? '' : 'http://localhost:4000';
+    const api = (p,opts={})=>fetch(`${API_ORIGIN}/api/tickets${p}`,{headers:{'Content-Type':'application/json'},...opts});
+
+    // ---------- dark mode (Lucide-safe) ----------
+    (function () {
+      const root   = document.documentElement;
+      const btn    = document.getElementById('darkBtn');
+      const slot   = document.getElementById('darkIconSlot');
+      const label  = document.getElementById('darkLabel');
+
+      const saved   = localStorage.getItem('theme');
+      const prefers = matchMedia('(prefers-color-scheme: dark)').matches;
+      const startDark = saved ? saved === 'dark' : prefers;
+      root.classList.toggle('dark', startDark);
+
+      function renderIcon(name){
+        if (window.lucide && lucide.icons && lucide.icons[name]) {
+          slot.innerHTML = lucide.icons[name].toSvg({ width: 16, height: 16 });
+        } else {
+          slot.textContent = name==='sun' ? '☀️' : '🌙';
+        }
+      }
+      function render() {
+        const isDark = root.classList.contains('dark');
+        label.textContent = isDark ? 'Light' : 'Dark';
+        renderIcon(isDark ? 'sun' : 'moon');
+      }
+      render();
+
+      btn.addEventListener('click', () => {
+        const next = !root.classList.contains('dark');
+        root.classList.toggle('dark', next);
+        localStorage.setItem('theme', next ? 'dark' : 'light');
+        render();
+      });
+    })();
+
+    // ---------- state ----------
+    let user={name:'',email:''};
+    let tickets=[]; let activeId=null;
+
+    function loadUser(){
+      try{const u=JSON.parse(localStorage.getItem('portal_user')||'{}'); if(u.email) user=u;}catch{}
+      $('custName').value=user.name||'';
+      $('custEmail').value=user.email||'';
+      const signed=!!user.email;
+      $('loginForm').classList.toggle('hidden',signed);
+      $('whoami').classList.toggle('hidden',!signed);
+      $('signOut').classList.toggle('hidden',!signed);
+      if(signed)$('whoEmail').textContent=user.email;
+    }
+
+    async function fetchMine(){
+      const res=await fetch(`${API_ORIGIN}/api/tickets`);
+      const all=await res.json();
+      tickets=all.filter(t=>(t.requester_email||'').toLowerCase()===(user.email||'').toLowerCase());
+      renderList();
+    }
+
+    function renderList(){
+      const q=($('search').value||'').trim().toLowerCase();
+      const list=$('ticketList'); list.innerHTML='';
+      if(!user.email){ list.innerHTML=`<li class="p-4 text-sm text-zinc-500">Sign in with your email to view your tickets.</li>`; icons(); return;}
+      const filtered=tickets.filter(t=>!q||(t.subject||'').toLowerCase().includes(q));
+      if(!filtered.length){ list.innerHTML=`<li class="p-4 text-sm text-zinc-500">No tickets yet. Create one on the left.</li>`; icons(); return;}
+      filtered.forEach(t=>{
+        const li=document.createElement('li');
+        li.className='p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer';
+        const tags=toArray(t.tags).map(x=>`<span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(x)}</span>`).join(' ');
+        li.innerHTML=`
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-medium truncate">${esc(t.subject)}</div>
+              <div class="text-xs text-zinc-500 mt-1 flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.status)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.priority)}</span>
+                ${t.category?`<span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.category)}</span>`:''}
+                ${tags}
+              </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800">${new Date(t.updated_at).toLocaleTimeString()}</span>
+          </div>`;
+        li.onclick=()=>openThread(t.id);
+        list.appendChild(li);
+      });
+      icons();
+    }
+
+    async function openThread(id){
+      activeId=id;
+      const [tRes,mRes]=await Promise.all([api('/'+id), api('/'+id+'/messages')]);
+      const t=await tRes.json(); const msgs=await mRes.json();
+
+      // guard: only the owner can view
+      if((t.requester_email||'').toLowerCase()!==(user.email||'').toLowerCase()){
+        $('threadCard').innerHTML=`<div class="p-6 text-sm text-rose-500">You do not have access to this ticket.</div>`; return;
+      }
+
+      const header=`
+        <div class="p-6 pb-3 border-b dark:border-zinc-800">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold tracking-tight">${esc(t.subject)}</h2>
+              <div class="text-xs text-zinc-500 mt-2 flex flex-wrap items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.status)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.priority)}</span>
+                ${t.category?`<span class="px-2 py-0.5 rounded-full text-[10px] bg-zinc-100 dark:bg-zinc-800">${esc(t.category)}</span>`:''}
+              </div>
+            </div>
+            <div class="text-right text-xs text-zinc-500">${new Date(t.updated_at).toLocaleString()}</div>
+          </div>
+        </div>`;
+
+      const thread=`
+        <div class="flex-1 overflow-auto p-4 space-y-3">
+          ${msgs.map(m=>{
+            const isAgent=m.author_type==='agent';
+            const who=isAgent?'Agent':(user.name||user.email||'You');
+            const bubble=isAgent?'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900':'bg-zinc-100 dark:bg-zinc-800';
+            return `<div class="flex ${isAgent?'justify-end':''}">
+              <div class="flex items-start ${isAgent?'flex-row-reverse':''} max-w-[80%]">
+                <div class="h-7 w-7 rounded-full ${isAgent?'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900':'bg-zinc-200 dark:bg-zinc-800'} grid place-items-center text-[10px] font-semibold mr-2">${esc((who[0]||'?').toUpperCase())}</div>
+                <div class="${bubble} px-3 py-2 rounded-2xl shadow-sm">
+                  <div class="text-[10px] opacity-70 mb-1">${esc(who)} • ${new Date(m.created_at).toLocaleString()}</div>
+                  <div class="text-sm leading-5 whitespace-pre-wrap">${esc(m.body)}</div>
+                </div>
+              </div>
+            </div>`;}).join('')}
+        </div>`;
+
+      const composer=`
+        <form id="replyForm" class="sticky bottom-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-t dark:border-zinc-800 p-3">
+          <div class="flex items-end gap-2">
+            <textarea class="flex-1 border dark:border-zinc-700 rounded-xl p-3 text-sm bg-white dark:bg-zinc-900" rows="3" placeholder="Write a reply… (Cmd/Ctrl+Enter to send)"></textarea>
+            <button class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-white bg-[var(--brand)]">
+              <i data-lucide="send" class="h-4 w-4"></i> Send
+            </button>
+          </div>
+          <div class="mt-2 text-[11px] text-zinc-500">Replies are added to your conversation with our team.</div>
+        </form>`;
+
+      $('threadCard').innerHTML=header+thread+composer;
+
+      const rf=$('replyForm');
+      rf.onsubmit=async(e)=>{
+        e.preventDefault();
+        const body=rf.querySelector('textarea').value.trim();
+        if(!body) return;
+        await api('/'+id+'/messages',{method:'POST', body:JSON.stringify({ body, author_type:'requester' })});
+        rf.reset(); toast('Message sent');
+        await fetchMine(); // refresh list/timestamps
+        openThread(id);    // reload thread
+      };
+      rf.querySelector('textarea').addEventListener('keydown',ev=>{
+        if((ev.metaKey||ev.ctrlKey)&&ev.key==='Enter') rf.dispatchEvent(new Event('submit',{cancelable:true}));
+      });
+
+      icons();
+    }
+
+    // ---------- KB autosuggest ----------
+    function debounce(fn,ms=220){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
+    async function kbSearch(q){
+      if(!q||q.length<2) return [];
+      const r=await fetch(`${API_ORIGIN}/api/kb/search?q=`+encodeURIComponent(q));
+      return r.ok ? r.json() : [];
+    }
+    function renderKbList(el, items){
+      if(!el) return;
+      if(!items.length){ el.innerHTML=''; return; }
+      el.innerHTML = `
+        <div class="text-[11px] text-zinc-500 mb-1">Did you mean…</div>
+        <div class="grid gap-1">
+          ${items.slice(0,5).map(it=>`
+            <a href="#" data-id="${it.id}" class="block border rounded-lg dark:border-zinc-800 p-2 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+              <div class="font-medium">${esc(it.title)}</div>
+              <div class="text-[11px] text-zinc-500">${esc(it.excerpt)}${it.excerpt.length>=240?'…':''}</div>
+              ${Array.isArray(it.tags)&&it.tags.length?`<div class="mt-1 flex flex-wrap gap-1">${it.tags.map(t=>`<span class="kb-pill px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800">${esc(t)}</span>`).join('')}</div>`:''}
+            </a>`).join('')}
+        </div>`;
+      [...el.querySelectorAll('[data-id]')].forEach(node=>{
+        node.onclick=async(ev)=>{
+          ev.preventDefault();
+          const id=node.getAttribute('data-id');
+          const r=await fetch(`${API_ORIGIN}/api/kb/articles/`+id);
+          const art=await r.json();
+          const w=window.open('about:blank','_blank');
+          w.document.write(`<pre style="white-space:pre-wrap;font-family:Inter,system-ui;padding:16px">${esc(art.title)}\n\n${esc(art.body)}</pre>`);
+        };
+      });
+    }
+    const onTypeSubj=debounce(async()=>{
+      const q=$('subj').value.trim();
+      renderKbList($('kbSuggestSubj'), await kbSearch(q));
+    },250);
+    const onTypeBody=debounce(async()=>{
+      const q=$('body').value.trim();
+      renderKbList($('kbSuggestBody'), await kbSearch(q));
+    },250);
+
+    // ---------- events ----------
+    document.getElementById('loginForm').onsubmit=async(e)=>{
+      e.preventDefault();
+      const name=$('custName').value.trim();
+      const email=$('custEmail').value.trim().toLowerCase();
+      if(!email) return;
+      user={name,email};
+      localStorage.setItem('portal_user', JSON.stringify(user));
+      loadUser();
+      await fetchMine();
+      toast('Signed in');
+    };
+
+    $('signOut').onclick=()=>{
+      localStorage.removeItem('portal_user');
+      user={name:'',email:''};
+      loadUser();
+      tickets=[]; renderList();
+      $('threadCard').innerHTML=`
+        <div class="flex-1 grid place-items-center text-center text-zinc-500 dark:text-zinc-400 p-8">
+          <div class="max-w-sm">
+            <i data-lucide="message-square" class="h-10 w-10 mx-auto mb-3"></i>
+            <div class="text-lg font-medium">Open a ticket</div>
+            <div class="text-sm">Choose a ticket above to view and reply.</div>
+          </div>
+        </div>`;
+      icons();
+    };
+
+    $('newForm').onsubmit=async(e)=>{
+      e.preventDefault();
+      const subject=$('subj').value.trim();
+      const body=$('body').value.trim();
+      if(!subject||!body) return;
+      if(!user.email){ toast('Please sign in with your email first'); return; }
+
+      const requester={ email:user.email }; if(user.name) requester.name=user.name;
+
+      const res=await fetch(`${API_ORIGIN}/api/tickets`,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ subject, body, channel:'web', requester })
+      });
+      if(!res.ok){ toast('Failed to create ticket'); return; }
+      const { id } = await res.json();
+      e.target.reset(); toast('Ticket created');
+      // clear KB suggestions after submit
+      $('kbSuggestSubj').innerHTML=''; $('kbSuggestBody').innerHTML='';
+      await fetchMine(); openThread(id);
+    };
+
+    $('search').addEventListener('input', renderList);
+    $('refreshBtn').onclick=fetchMine;
+
+    // KB listeners
+    $('subj').addEventListener('input', onTypeSubj);
+    $('body').addEventListener('input', onTypeBody);
+
+    // ---------- init ----------
+    (async function init(){
+      loadUser();
+      if(user.email) await fetchMine();
+      icons();
+    })();
+  </script>
+</body>
+</html>
