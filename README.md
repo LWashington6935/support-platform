@@ -1,4 +1,4 @@
-# Customer Support Platform — Starter Kit
+# Customer Support Platform 
 
 A thin-slice MVP you can run locally in minutes:
 
