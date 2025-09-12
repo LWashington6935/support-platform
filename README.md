@@ -1,3 +1,4 @@
+[![Watch the demo](https://img.youtube.com/vi/MpDcTnu_WDc/hqdefault.jpg)](https://youtu.be/MpDcTnu_WDc "Play video on YouTube")
 # Support Desk — AI-Assisted Customer Support Platform
 
 > **Production-ready** customer support platform with AI-powered assistance, built for simplicity and scalability.
